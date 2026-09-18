@@ -1,0 +1,13 @@
+{
+  "name": "qr-phoenix",
+  "version": "1.0.0",
+  "description": "بازیابی هوشمند کیوآرکدهای آسیب‌دیده با ریاضیات Reed-Solomon",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node test/01-reedsolomon.test.js && node test/02-bch.test.js && node test/03-roundtrip.test.js && node test/04-imaging.test.js"
+  },
+  "devDependencies": {
+    "canvas": "^3.2.3"
+  }
+}
