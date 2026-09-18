@@ -1,1 +1,162 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>QR Phoenix — بازیابی هوشمند کیوآرکد آسیب‌دیده</title>
+<meta name="description" content="خواندن و بازیابی ریاضیاتی کیوآرکدهای خط‌خورده، پاره یا پاک‌شده با استفاده از کدهای Reed-Solomon" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐦‍🔥</text></svg>" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
 
+<div class="bg-glow" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="brand">
+    <span class="brand-icon">🐦‍🔥</span>
+    <div class="brand-text">
+      <h1>QR Phoenix</h1>
+      <p>بازیابی هوشمند کیوآرکدهای آسیب‌دیده با ریاضیات Reed-Solomon</p>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="generate" role="tab" aria-selected="true">
+      <span class="tab-icon">✨</span> ساخت و شبیه‌سازی آسیب
+    </button>
+    <button class="tab-btn" data-tab="upload" role="tab" aria-selected="false">
+      <span class="tab-icon">📷</span> بارگذاری تصویر واقعی
+    </button>
+    <button class="tab-btn" data-tab="about" role="tab" aria-selected="false">
+      <span class="tab-icon">📐</span> این چطور کار می‌کند؟
+    </button>
+  </nav>
+
+  <!-- ===================== TAB 1: GENERATE + DAMAGE SIMULATOR ===================== -->
+  <section class="tab-panel active" id="panel-generate">
+    <div class="card">
+      <h2>۱. متن یا لینک خود را وارد کنید</h2>
+      <textarea id="gen-text" rows="3" placeholder="مثلاً: https://example.com یا هر متنی...">به سلامتی QR Phoenix — این کد حتی اگر آسیب ببیند، باز هم قابل بازیابی است!</textarea>
+
+      <div class="row-controls">
+        <div class="ec-select">
+          <span class="control-label">سطح تصحیح خطا:</span>
+          <div class="pill-group" id="ec-level-group">
+            <button data-ec="0" title="۷٪ — کمترین محافظت، بیشترین ظرفیت">L</button>
+            <button data-ec="1" title="۱۵٪">M</button>
+            <button data-ec="2" title="۲۵٪">Q</button>
+            <button data-ec="3" class="active" title="۳۰٪ — بیشترین محافظت در برابر آسیب">H</button>
+          </div>
+        </div>
+        <button id="btn-generate" class="btn btn-primary">🪄 ساخت کیوآرکد</button>
+      </div>
+      <p class="hint">پیشنهاد: برای آزمایش بازیابی آسیب، سطح <b>H</b> (۳۰٪) را انتخاب کنید تا خرابی بیشتری قابل جبران باشد.</p>
+    </div>
+
+    <div class="card" id="damage-card" hidden>
+      <h2>۲. روی کد خط بکشید یا پاکش کنید</h2>
+      <p class="hint">با ماوس یا انگشت روی تصویر بکشید تا بخشی از آن «آسیب‌دیده» علامت بخورد — دقیقاً مثل یک خط‌خوردگی یا لکه واقعی.</p>
+
+      <div class="canvas-wrap">
+        <canvas id="qr-canvas"></canvas>
+      </div>
+
+      <div class="row-controls">
+        <div class="brush-controls">
+          <span class="control-label">قلم آسیب:</span>
+          <input type="range" id="brush-size" min="4" max="60" value="18" />
+          <button id="btn-clear-damage" class="btn btn-ghost">🧹 پاک‌سازی آسیب‌ها</button>
+        </div>
+        <button id="btn-recover" class="btn btn-primary btn-glow">🔥 بازیابی کن</button>
+      </div>
+
+      <div class="damage-stat">
+        <span id="damage-percent">۰٪</span> از بخش داده آسیب دیده
+        <div class="damage-bar"><div id="damage-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="card result-card" id="gen-result" hidden></div>
+  </section>
+
+  <!-- ===================== TAB 2: UPLOAD REAL IMAGE ===================== -->
+  <section class="tab-panel" id="panel-upload">
+    <div class="card">
+      <h2>۱. تصویر کیوآرکد را بارگذاری کنید</h2>
+      <p class="hint">تصویری واضح و تقریباً روبه‌رو از کد بارگذاری کنید — حتی اگر خط‌خورده، پاره یا کثیف باشد.</p>
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="file-input" accept="image/*" hidden />
+        <span class="dropzone-icon">📷</span>
+        <span>برای انتخاب تصویر کلیک کنید، یا فایل را اینجا رها کنید</span>
+      </label>
+    </div>
+
+    <div class="card" id="upload-canvas-card" hidden>
+      <h2>۲. در صورت نیاز، نواحی ناخوانا را علامت بزنید (اختیاری)</h2>
+      <p class="hint">اگر می‌دانید بخشی از تصویر واقعاً ناخواناست (مثلاً روی نور افتاده یا پاره شده)، رویش بکشید تا به‌عنوان «حذف‌شدهٔ شناخته‌شده» به الگوریتم اعلام شود — این کار دقت بازیابی را به‌شدت افزایش می‌دهد.</p>
+      <div class="canvas-wrap">
+        <canvas id="upload-canvas"></canvas>
+      </div>
+      <div class="row-controls">
+        <div class="brush-controls">
+          <span class="control-label">قلم علامت‌گذاری:</span>
+          <input type="range" id="upload-brush-size" min="4" max="80" value="24" />
+          <button id="btn-clear-upload-damage" class="btn btn-ghost">🧹 پاک‌سازی علامت‌ها</button>
+        </div>
+        <button id="btn-decode-upload" class="btn btn-primary btn-glow">🔍 شناسایی و بازیابی</button>
+      </div>
+    </div>
+
+    <div class="card result-card" id="upload-result" hidden></div>
+  </section>
+
+  <!-- ===================== TAB 3: ABOUT / MATH ===================== -->
+  <section class="tab-panel" id="panel-about">
+    <div class="card">
+      <h2>🧮 ریاضیات پشت بازیابی</h2>
+      <p>
+        هر کیوآرکد از ابتدا حاوی <b>کدواژه‌های تصحیح خطای Reed-Solomon</b> است؛ داده‌های اضافی
+        که روی میدان متناهی GF(256) محاسبه می‌شوند تا در صورت آسیب، داده اصلی بازسازی شود.
+        سطح <b>H</b> اجازه می‌دهد تا ۳۰٪ از کدواژه‌ها به‌صورت «خطای ناشناخته» تصحیح شوند.
+      </p>
+      <p>
+        نکتهٔ کلیدی این پروژه اینجاست: وقتی <b>محل</b> آسیب را از قبل بدانیم (یعنی آن را به‌عنوان
+        <b>Erasure</b> علامت بزنیم، نه فقط یک «خطا»)، الگوریتم Reed-Solomon می‌تواند
+        تقریباً <b>دو برابر</b> بیشتر تصحیح کند — چون بخش زیادی از کار پیدا کردن محل خرابی،
+        از قبل انجام شده. به همین دلیل قلمِ «آسیب‌رسانی» در این ابزار صرفاً یک جلوهٔ گرافیکی نیست؛
+        مستقیماً به موتور Reed-Solomon اعلام می‌شود که کدام ماژول‌ها را باید Erasure در نظر بگیرد.
+      </p>
+      <div class="math-badges">
+        <div class="math-badge"><b>GF(256)</b><span>میدان متناهی محاسبات</span></div>
+        <div class="math-badge"><b>Reed-Solomon</b><span>تصحیح خطا و Erasure</span></div>
+        <div class="math-badge"><b>BCH(15,5)</b><span>خوداصلاحی اطلاعات فرمت</span></div>
+        <div class="math-badge"><b>الگوریتم اقلیدسی</b><span>حل معادلهٔ کلیدی</span></div>
+      </div>
+      <p class="hint">این پروژه به‌طور کامل با جاوااسکریپت خالص و بدون هیچ کتابخانهٔ بیرونی برای موتور کیوآرکد نوشته شده — تمام ریاضیات از صفر پیاده‌سازی شده است.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  ساخته‌شده با 🔥 — QR Phoenix — کد باز روی GitHub
+</footer>
+
+<!-- Core QR math engine (order matters: each file attaches to window.QR) -->
+<script src="../core/01-gf256.js"></script>
+<script src="../core/02-reedsolomon.js"></script>
+<script src="../core/03-tables.js"></script>
+<script src="../core/04-bch.js"></script>
+<script src="../core/05-matrix.js"></script>
+<script src="../core/06-encoder.js"></script>
+<script src="../core/07-decoder.js"></script>
+<script src="../core/08-imaging.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
